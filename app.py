@@ -1,19 +1,25 @@
+from flask import Flask, request, jsonify, send_file
 import os
-import subprocess
 import tempfile
-
-from flask import Flask, request, send_file, jsonify
+import subprocess
 
 app = Flask(__name__)
 
-@app.get("/")
-def home():
-    return jsonify({"status": "ok", "service": "NextPlay Video Processor"})
 
-@app.post("/process")
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "service": "NextPlay Video Processor",
+        "status": "ok"
+    })
+
+
+@app.route("/process", methods=["POST"])
 def process_video():
     if "video" not in request.files:
-        return jsonify({"error": "No se recibió ningún video"}), 400
+        return jsonify({
+            "error": "No se recibió ningún video"
+        }), 400
 
     video = request.files["video"]
 
@@ -35,16 +41,29 @@ def process_video():
         ]
 
         try:
-            subprocess.run(command, check=True)
-        except subprocess.CalledProcessError:
-            return jsonify({"error": "FFmpeg no pudo procesar el video"}), 500
+            subprocess.run(
+                command,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
-        return send_file(
-            output_path,
-            mimetype="video/mp4",
-            as_attachment=True,
-            download_name="nextplay-short.mp4"
-        )
+            return send_file(
+                output_path,
+                mimetype="video/mp4",
+                as_attachment=True,
+                download_name="nextplay-short.mp4"
+            )
+
+        except subprocess.CalledProcessError as e:
+            return jsonify({
+                "error": "FFmpeg no pudo procesar el video",
+                "details": e.stderr.decode(
+                    "utf-8",
+                    errors="ignore"
+                )
+            }), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
