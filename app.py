@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file
 import os
 import tempfile
 import subprocess
+import gdown
 
 app = Flask(__name__)
 
@@ -16,31 +17,35 @@ def home():
 
 @app.route("/process", methods=["POST"])
 def process_video():
-    if "video" not in request.files:
-        return jsonify({
-            "error": "No se recibió ningún video"
-        }), 400
+    data = request.get_json(silent=True) or {}
+    video_url = data.get("video_url")
 
-    video = request.files["video"]
+    if not video_url:
+        return jsonify({"error": "Falta video_url"}), 400
 
     with tempfile.TemporaryDirectory() as temp_dir:
         input_path = os.path.join(temp_dir, "input.mp4")
         output_path = os.path.join(temp_dir, "output.mp4")
 
-        video.save(input_path)
-
-        command = [
-            "ffmpeg",
-            "-y",
-            "-i", input_path,
-            "-t", "60",
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-c:a", "aac",
-            output_path
-        ]
-
         try:
+            gdown.download(
+                url=video_url,
+                output=input_path,
+                quiet=False,
+                fuzzy=True
+            )
+
+            command = [
+                "ffmpeg",
+                "-y",
+                "-i", input_path,
+                "-t", "60",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-c:a", "aac",
+                output_path
+            ]
+
             subprocess.run(
                 command,
                 check=True,
@@ -55,13 +60,9 @@ def process_video():
                 download_name="nextplay-short.mp4"
             )
 
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             return jsonify({
-                "error": "FFmpeg no pudo procesar el video",
-                "details": e.stderr.decode(
-                    "utf-8",
-                    errors="ignore"
-                )
+                "error": str(e)
             }), 500
 
 
