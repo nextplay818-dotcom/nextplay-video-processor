@@ -32,7 +32,6 @@ def process_video():
                 url=video_url,
                 output=input_path,
                 quiet=False,
-                fuzzy=True
             )
 
             command = [
