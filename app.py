@@ -38,7 +38,7 @@ def process_video():
                 "ffmpeg",
                 "-y",
                 "-i", input_path,
-                "-t", "60",
+                "-t", "30",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-c:a", "aac",
