@@ -19,6 +19,7 @@ def home():
 def process_video():
     data = request.get_json(silent=True) or {}
     video_url = data.get("video_url")
+    start = str(data.get("start", 0))
 
     if not video_url:
         return jsonify({"error": "Falta video_url"}), 400
@@ -37,8 +38,9 @@ def process_video():
             command = [
                 "ffmpeg",
                 "-y",
+                "-ss", start,
                 "-i", input_path,
-                "-t", "30",
+                "-t", "45",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-c:a", "aac",
