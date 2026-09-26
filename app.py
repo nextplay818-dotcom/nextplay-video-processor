@@ -41,6 +41,8 @@ def process_video():
                 "-ss", start,
                 "-i", input_path,
                 "-t", "45",
+                "-vf",
+                "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-c:a", "aac",
